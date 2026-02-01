@@ -15,3 +15,8 @@ backend/.env
 
 # VSCode (opcional)
 .vscode/
+
+data/raw/
+data/extracted/
+data/output/
+*.zip
