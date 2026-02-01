@@ -4,15 +4,17 @@ from sqlalchemy import text
 from .db import engine
 import re
 
-app = FastAPI(
-    title="Teste de Integração com API Pública",
-)
+app = FastAPI()
 
-# CORS: libera seu front na Vercel (inclui previews com hash)
+origins = [
+    "https://teste-de-integracao-com-api-publica-8hufwjr3.vercel.app",
+  
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
