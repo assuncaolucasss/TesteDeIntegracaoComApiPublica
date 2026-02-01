@@ -15,3 +15,7 @@ DATABASE_URL = (
     f"?sslmode=require"
 )
 
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+)
