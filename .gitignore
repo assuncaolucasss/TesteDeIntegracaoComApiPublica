@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv*/
+venv/
+
+# Node / Vite
+node_modules/
+dist/
+
+# Env (NÃO subir secrets)
+.env
+frontend/.env
+backend/.env
+
+# VSCode (opcional)
+.vscode/
