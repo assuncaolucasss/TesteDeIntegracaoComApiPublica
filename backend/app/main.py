@@ -3,23 +3,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from .db import engine
 import re
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
-
-origins = [
-  "https://teste-de-integracao-com-api-publica-8hufwjrj3.vercel.app",
-  "https://teste-de-integracao-com-api-publica.vercel.app",
-]
-
-app.add_middleware(
-  CORSMiddleware,
-  allow_origins=origins,
-  allow_credentials=True,
-  allow_methods=["*"],
-  allow_headers=["*"],
+app = FastAPI(
+    title="Teste de Integração com API Pública",
 )
+
+# CORS: libera seu front na Vercel (inclui previews com hash)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+def root():
+    return {"ok": True}
 
 @app.get("/health")
 def health():
@@ -35,7 +35,7 @@ def listar_operadoras(
 
     with engine.connect() as conn:
         base = "FROM dim_operadora WHERE 1=1"
-        params = {}
+        params: dict = {}
 
         if search:
             base += " AND (cnpj ILIKE :s OR razao_social ILIKE :s)"
@@ -44,14 +44,16 @@ def listar_operadoras(
         total = conn.execute(text(f"SELECT COUNT(*) {base}"), params).scalar_one()
 
         rows = conn.execute(
-            text(f"""
+            text(
+                f"""
                 SELECT cnpj, razao_social, uf, modalidade
                 {base}
                 ORDER BY razao_social
                 LIMIT :limit OFFSET :offset
-            """),
+                """
+            ),
             {**params, "limit": limit, "offset": offset},
-        ).mappings().all()  # retorna dict por linha [web:741]
+        ).mappings().all()
 
     return {
         "data": rows,
@@ -66,11 +68,13 @@ def detalhes_operadora(cnpj: str):
 
     with engine.connect() as conn:
         row = conn.execute(
-            text("""
+            text(
+                """
                 SELECT cnpj, razao_social, uf, modalidade
                 FROM dim_operadora
                 WHERE cnpj = :cnpj
-            """),
+                """
+            ),
             {"cnpj": cnpj_digits},
         ).mappings().first()
 
@@ -81,12 +85,12 @@ def detalhes_operadora(cnpj: str):
 
 @app.get("/api/operadoras/{cnpj}/despesas")
 def historico_despesas(cnpj: str):
-    import re
     cnpj_digits = re.sub(r"\D", "", cnpj)
 
     with engine.connect() as conn:
         rows = conn.execute(
-            text("""
+            text(
+                """
                 SELECT
                   ano,
                   trimestre,
@@ -95,7 +99,8 @@ def historico_despesas(cnpj: str):
                 WHERE cnpj = :cnpj
                 GROUP BY ano, trimestre
                 ORDER BY ano, trimestre
-            """),
+                """
+            ),
             {"cnpj": cnpj_digits},
         ).mappings().all()
 
@@ -110,19 +115,20 @@ def estatisticas():
     - top 5 operadoras por soma de despesas no fato (3 trimestres)
     """
     with engine.connect() as conn:
-        # Total e média usando a tabela agregada (barato e consistente)
         row = conn.execute(
-            text("""
+            text(
+                """
                 SELECT
                   COALESCE(SUM(total_despesas), 0) AS total_despesas,
                   COALESCE(AVG(total_despesas), 0) AS media_despesas
                 FROM despesas_agregadas
-            """)
+                """
+            )
         ).mappings().one()
 
-        # Top 5 operadoras por total no fato (soma dos 3 trimestres)
         top5 = conn.execute(
-            text("""
+            text(
+                """
                 SELECT
                   d.cnpj,
                   d.razao_social,
@@ -138,7 +144,8 @@ def estatisticas():
                     LIMIT 5
                 ) t ON t.cnpj = d.cnpj
                 ORDER BY t.total_despesas DESC
-            """)
+                """
+            )
         ).mappings().all()
 
     return {
@@ -164,7 +171,8 @@ def estatisticas_por_uf():
     """
     with engine.connect() as conn:
         rows = conn.execute(
-            text("""
+            text(
+                """
                 SELECT
                   d.uf,
                   SUM(f.valor_despesas) AS total_uf
@@ -173,10 +181,8 @@ def estatisticas_por_uf():
                 WHERE d.uf IS NOT NULL AND d.uf <> ''
                 GROUP BY d.uf
                 ORDER BY total_uf DESC
-            """)
+                """
+            )
         ).mappings().all()
 
     return [{"uf": r["uf"], "total_uf": float(r["total_uf"])} for r in rows]
-
-
-
