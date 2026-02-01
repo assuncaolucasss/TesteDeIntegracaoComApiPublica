@@ -6,15 +6,11 @@ import re
 
 app = FastAPI()
 
-origins = [
-    "https://teste-de-integracao-com-api-publica-8hufwjr3.vercel.app",
-  
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=False,
+    allow_origins=[
+        "https://teste-de-integracao-com-api-publica-8hufwjr3.vercel.app",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
