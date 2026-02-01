@@ -3,21 +3,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from .db import engine
 import re
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="ANS API")
+app = FastAPI()
 
-# CORS (para o Vue acessar o backend) [web:732]
 origins = [
-    "http://localhost:5173",  # Vite (Vue)
-    "http://localhost:8080",
-    "http://localhost:3000",
+  "https://teste-de-integracao-com-api-publica-8hufwjrj3.vercel.app",
+  "https://teste-de-integracao-com-api-publica.vercel.app",
 ]
+
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+  CORSMiddleware,
+  allow_origins=origins,
+  allow_credentials=True,
+  allow_methods=["*"],
+  allow_headers=["*"],
 )
 
 @app.get("/health")
