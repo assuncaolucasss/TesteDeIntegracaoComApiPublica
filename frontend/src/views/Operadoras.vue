@@ -10,41 +10,53 @@ const q = ref('')
 const page = ref(1)
 const pageSize = ref(10)
 
-const total = computed(() => operadoras.value.length)
+// Metadados vindos do backend
+const total = ref(0)
+const serverPage = ref(1)
+const serverLimit = ref(10)
 
-const filtered = computed(() => {
-  const term = q.value.trim().toLowerCase()
-  if (!term) return operadoras.value
-  return operadoras.value.filter(o =>
-    String(o.razao_social ?? '').toLowerCase().includes(term) ||
-    String(o.cnpj ?? '').includes(term) ||
-    String(o.uf ?? '').toLowerCase().includes(term) ||
-    String(o.modalidade ?? '').toLowerCase().includes(term)
-  )
-})
-
-const pageCount = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize.value)))
-
-const paged = computed(() => {
-  const start = (page.value - 1) * pageSize.value
-  return filtered.value.slice(start, start + pageSize.value)
-})
+const pageCount = computed(() => Math.max(1, Math.ceil((total.value || 0) / pageSize.value)))
 
 function go(p) {
   page.value = Math.min(pageCount.value, Math.max(1, p))
 }
 
-watch([q, pageSize], () => go(1))
+// sempre que muda busca ou tamanho da página, volta pra primeira
+watch([q, pageSize], () => {
+  go(1)
+  load()
+})
+
+// quando muda a página, recarrega
+watch(page, () => {
+  load()
+})
+
+function buildQuery() {
+  const params = new URLSearchParams()
+  params.set('page', String(page.value))
+  params.set('limit', String(pageSize.value))
+  const term = q.value.trim()
+  if (term) params.set('q', term)
+  return params.toString()
+}
 
 async function load() {
   loading.value = true
   error.value = ''
+
   try {
-    const data = await apiGet('/api/operadoras')
-    operadoras.value = Array.isArray(data) ? data : (data.items ?? data.data ?? [])
+    const res = await apiGet(`/api/operadoras?${buildQuery()}`)
+
+    // Esperado: { data: [...], page, limit, total }
+    operadoras.value = Array.isArray(res?.data) ? res.data : []
+    total.value = Number(res?.total ?? operadoras.value.length) || 0
+    serverPage.value = Number(res?.page ?? page.value) || page.value
+    serverLimit.value = Number(res?.limit ?? pageSize.value) || pageSize.value
   } catch (e) {
     error.value = e?.message ?? String(e)
     operadoras.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
@@ -116,9 +128,9 @@ onMounted(load)
 
       <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-sm text-slate-600 dark:text-slate-400">
-          Mostrando <span class="font-medium text-slate-900 dark:text-slate-100">{{ paged.length }}</span>
-          de <span class="font-medium text-slate-900 dark:text-slate-100">{{ filtered.length }}</span>
-          (total: {{ total }})
+          Mostrando <span class="font-medium text-slate-900 dark:text-slate-100">{{ operadoras.length }}</span>
+          de <span class="font-medium text-slate-900 dark:text-slate-100">{{ total }}</span>
+          (página: {{ serverPage }} / {{ pageCount }})
         </p>
 
         <div class="flex items-center justify-between gap-2 sm:justify-end">
@@ -171,7 +183,7 @@ onMounted(load)
       <!-- MOBILE: Cards (sm <) -->
       <div class="space-y-3 sm:hidden">
         <article
-          v-for="o in paged"
+          v-for="o in operadoras"
           :key="o.cnpj"
           class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900"
         >
@@ -214,7 +226,10 @@ onMounted(load)
           </router-link>
         </article>
 
-        <div v-if="paged.length === 0" class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-200">
+        <div
+          v-if="operadoras.length === 0"
+          class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-200"
+        >
           Nenhum resultado para o filtro atual.
         </div>
       </div>
@@ -244,7 +259,7 @@ onMounted(load)
             </thead>
 
             <tbody class="divide-y divide-slate-200 dark:divide-white/10">
-              <tr v-for="o in paged" :key="o.cnpj" class="hover:bg-slate-50 dark:hover:bg-white/5">
+              <tr v-for="o in operadoras" :key="o.cnpj" class="hover:bg-slate-50 dark:hover:bg-white/5">
                 <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
                   {{ o.cnpj }}
                 </td>
@@ -271,7 +286,7 @@ onMounted(load)
                 </td>
               </tr>
 
-              <tr v-if="paged.length === 0">
+              <tr v-if="operadoras.length === 0">
                 <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-600 dark:text-slate-400">
                   Nenhum resultado para o filtro atual.
                 </td>
