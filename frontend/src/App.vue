@@ -206,7 +206,7 @@ const tooltipText = computed(() => (isDark.value ? 'Tema escuro (clique para cla
     </main>
 
     <footer class="border-t border-slate-200/70 py-6 text-center text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
-      &copy; 2024 Teste de Integração com API Pública. Todos os direitos reservados.
+      &copy; 2026 Teste de Integração com API Pública. Todos os direitos reservados.
     </footer>
   </div>
 </template>
