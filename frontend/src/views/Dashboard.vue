@@ -263,8 +263,10 @@ onMounted(load)
         </div>
 
         <div v-else class="mt-4 rounded-lg border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-950">
-          <div class="min-h-[320px] sm:min-h-[380px]">
-            <UFsBarChart :rows="porUF" :topN="topNUF" />
+          <div class="w-full overflow-x-auto">
+            <div class="min-h-[520px] sm:min-h-[380px]">
+              <UFsBarChart :rows="porUF" :topN="topNUF" />
+            </div>
           </div>
         </div>
       </div>
