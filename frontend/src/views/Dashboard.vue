@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { apiGet } from '../api'
 import UFsBarChart from '../components/UFsBarChart.vue'
+import UFsUFList from '../components/UFsUFList.vue'
 
 const loading = ref(false)
 const error = ref('')
@@ -262,13 +263,19 @@ onMounted(load)
           Sem dados para exibir.
         </div>
 
-        <div v-else class="mt-4 rounded-lg border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-950">
-          <div class="w-full overflow-x-auto">
-            <div class="min-h-[520px] sm:min-h-[380px]">
+        <template v-else>
+          <!-- MOBILE: Lista -->
+          <div class="mt-4 sm:hidden">
+            <UFsUFList :rows="porUF" :topN="topNUF" />
+          </div>
+
+          <!-- DESKTOP/TABLET: Gráfico -->
+          <div class="mt-4 hidden rounded-lg border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-950 sm:block">
+            <div class="min-h-[380px]">
               <UFsBarChart :rows="porUF" :topN="topNUF" />
             </div>
           </div>
-        </div>
+        </template>
       </div>
     </template>
   </section>
