@@ -1,384 +1,204 @@
-# TesteDeIntegracaoComApiPublica
-
-Projeto full-stack para integração e visualização de dados da ANS, composto por:
-
-- **ETL (Python)**: baixa, extrai, processa e consolida dados em CSV/ZIP.
-- **Backend (FastAPI + SQLAlchemy)**: consulta o PostgreSQL e expõe uma API REST.
-- **Frontend (Vite + Vue)**: dashboard, gráficos e detalhes por operadora (com filtros).
-- **Testes (Vitest)**: cobre casos de sucesso/erro/vazio e filtros no frontend.
+# Teste de Integração com API Pública
+
+## Visão geral
+Projeto full‑stack para integração e visualização de dados públicos (ANS). O fluxo principal é:
+
+1. ETL (Python) baixa arquivos trimestrais (ZIP), extrai CSVs e gera arquivos consolidados em `data/output/`.
+2. Dados consolidados são importados para PostgreSQL (scripts em `etl/`).
+
+> Observação: o banco utilizado neste projeto foi provisionado no **Neon** (https://neon.tech). Use a connection string fornecida pelo Neon para configurar `DATABASE_URL` quando aplicável.
+
+3. Backend (FastAPI + SQLAlchemy) expõe uma API REST que consulta o banco.
+4. Frontend (Vite + Vue) consome a API e apresenta um dashboard com gráficos, ranking e detalhes por operadora.
+
+> O projeto inclui testes de frontend (Vitest) cobrindo casos de sucesso, erro e estado vazio.
+
+## Links (Deploy e repositório)
+- **Repositório:** [URL do repositório]  
+- **Frontend (deploy):** [URL do frontend]  
+- **Backend (API):** https://testedeintegracaocomapipublica.onrender.com  
+- **Dashboard:** [URL do dashboard]
+
+## Funcionalidades
+- Listagem paginada de operadoras com busca por CNPJ/razão social ✅
+- Detalhe de operadora por CNPJ (metadados + histórico de despesas) ✅
+- Histórico de despesas agregadas por ano/trimestre ✅
+- Estatísticas gerais (total, média) e Top5 operadoras ✅
+- Distribuição de despesas por UF (gráfico) ✅
+- Testes automatizados do frontend (Vitest) ✅
+
+## Stack
+- Backend: **Python**, FastAPI, SQLAlchemy, Uvicorn 🔧
+- Frontend: **Vue 3**, Vite, Tailwind CSS (ou CSS do projeto) 🖥️
+- Banco: **PostgreSQL (Neon)** 🗄️
+- Deploy: Frontend em **Vercel**; Backend em **Render** ⚙️
+
+## Rotas da API
+Abaixo estão as rotas principais e exemplos de request (curl). Substitua `[API_BASE]` por `https://testedeintegracaocomapipublica.onrender.com` ou sua URL local.
+
+- GET /health
+  - Descrição: checagem de saúde da API
+  - Exemplo:
+    ```bash
+    curl -i https://testedeintegracaocomapipublica.onrender.com/health
+    ```
+
+- GET /api/operadoras?page=&limit=&search=
+  - Descrição: lista paginada de operadoras; parâmetros opcionais: `page` (>=1), `limit` (1..100), `search` (CNPJ ou razão social)
+  - Exemplo:
+    ```bash
+    curl -i "https://testedeintegracaocomapipublica.onrender.com/api/operadoras?page=1&limit=20&search=operadora"
+    ```
+  - Exemplo de resposta (JSON):
+    ```json
+    {
+      "data": [{ "cnpj": "12345678000195", "razao_social": "Operadora X", "uf": "SP", "modalidade": "AMB" }],
+      "page": 1,
+      "limit": 20,
+      "total": 1234
+    }
+    ```
+
+- GET /api/operadoras/{cnpj}
+  - Descrição: retorna metadados da operadora identificada pelo CNPJ (use CNPJ apenas com dígitos)
+  - Exemplo:
+    ```bash
+    curl -i https://testedeintegracaocomapipublica.onrender.com/api/operadoras/12345678000195
+    ```
+  - Erro: 404 com `detail: "Operadora não encontrada"` se não existir.
+
+- GET /api/operadoras/{cnpj}/despesas
+  - Descrição: histórico de despesas agregadas por ano e trimestre para a operadora
+  - Exemplo:
+    ```bash
+    curl -i https://testedeintegracaocomapipublica.onrender.com/api/operadoras/12345678000195/despesas
+    ```
+  - Exemplo de resposta:
+    ```json
+    [
+      { "ano": 2025, "trimestre": 1, "valor_despesas": 123.45 },
+      { "ano": 2025, "trimestre": 2, "valor_despesas": 234.56 }
+    ]
+    ```
+
+- GET /api/estatisticas
+  - Descrição: estatísticas gerais (total, média) e `top5_operadoras`
+  - Exemplo:
+    ```bash
+    curl -i https://testedeintegracaocomapipublica.onrender.com/api/estatisticas
+    ```
+  - Exemplo de resposta:
+    ```json
+    {
+      "total_despesas": 12345.67,
+      "media_despesas": 123.45,
+      "top5_operadoras": [ /* 5 items */ ]
+    }
+    ```
+
+- GET /api/estatisticas/uf
+  - Descrição: distribuição de despesas por UF
+  - Exemplo:
+    ```bash
+    curl -i https://testedeintegracaocomapipublica.onrender.com/api/estatisticas/uf
+    ```
+  - Exemplo de resposta:
+    ```json
+    [ { "uf": "SP", "total_uf": 123.45 }, { "uf": "RJ", "total_uf": 67.89 } ]
+    ```
+
+## Como rodar localmente
+Passos mínimos para desenvolvimento. Substitua comandos ou nomes por `[ajuste conforme seu projeto]` quando necessário.
+
+Backend (API)
+1. Entre na pasta do backend:
+   ```bash
+   cd backend
+   ```
+2. Crie e ative um ambiente virtual (opcional):
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate    # Windows
+   source .venv/bin/activate  # macOS / Linux
+   ```
+3. Instale dependências:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Configure variáveis de ambiente (veja seção abaixo).
+5. Rode a API com Uvicorn:
+   ```bash
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+Frontend (Vite)
+1. Entre na pasta do frontend:
+   ```bash
+   cd frontend
+   ```
+2. Instale dependências:
+   ```bash
+   npm install
+   ```
+3. Configure variáveis de ambiente (`.env` ou painel de host):
+   ```env
+   VITE_API_URL=https://testedeintegracaocomapipublica.onrender.com
+   ```
+4. Rode em modo dev:
+   ```bash
+   npm run dev
+   ```
+5. Build de produção:
+   ```bash
+   npm run build
+   npm run preview   # [ajuste conforme seu projeto]
+   ```
+
+> Abra o frontend em `http://localhost:5173` (ou URL indicada pelo Vite).
+
+## Variáveis de ambiente
+- **DATABASE_URL** — URL de conexão PostgreSQL (formato: `postgresql://USER:PASSWORD@HOST:PORT/DBNAME`). Ex.: `postgresql://postgres:senha@localhost:5432/ans_db`.
+  - Se estiver usando **Neon**, copie a connection string do painel do Neon e use-a como `DATABASE_URL` (ex.: `postgresql://user:pass@<host>:<port>/dbname`).
+- **VITE_API_URL** — URL base usada pelo frontend para a API (ex.: `https://testedeintegracaocomapipublica.onrender.com`).
+
+Onde definir:
+- Localmente: use `.env` ou defina no shell antes de rodar os serviços.
+- Render (backend): configure `DATABASE_URL` e outros secrets no painel do serviço (ouponha a connection string do Neon quando usado como DB). 
+- Vercel (frontend): configure `VITE_API_URL` nas Environment Variables do projeto.
+
+## Deploy
+- Frontend (Vercel) ✅
+  - Crie um projeto apontando para a pasta `frontend` do repositório.
+  - Configure `VITE_API_URL` nas Environment Variables do projeto no painel da Vercel.
+  - Ajuste build commands se necessário (`npm run build` / `npm run preview` como placeholder).
+
+- Backend (Render) ✅
+  - Crie um Web Service (ou container) apontando para o backend.
+  - Configure `DATABASE_URL` e quaisquer outras env vars no painel da Render.
+  - Para aplicações em Python, defina o comando de start como: `uvicorn app.main:app --host 0.0.0.0 --port 10000` (ajuste conforme o ambiente de deploy).
+  - Observação: neste projeto o banco foi provisionado no **Neon**; copie a connection string do Neon e configure `DATABASE_URL` na Render (ou use-a localmente em `.env`).
+
+> Configure secrets (DATABASE_URL, VITE_API_URL) no painel da plataforma usada para que não fiquem em código-fonte.
+
+## Troubleshooting
+- CORS (origem sem "/" no final) ⚠️
+  - Sintoma: Erros CORS quando o frontend tenta acessar a API.
+  - Solução: verifique as origens permitidas no backend (CORSMiddleware) e use a origem **sem barra final**, ex.: `https://meu-front.vercel.app` (não `https://meu-front.vercel.app/`).
+
+- 404 ao recarregar rotas (Vercel) 🛠️
+  - Sintoma: Ao dar refresh em uma rota SPA, recebe 404.
+  - Solução: adicione um rewrite no `vercel.json` para redirecionar todas as rotas para `/index.html`:
+    ```json
+    {
+      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+    }
+    ```
+
+- Layout mobile no gráfico de UF (lista no mobile, gráfico no desktop) 📱💻
+  - Sintoma: componente de UF não troca para lista em telas pequenas.
+  - Solução: ajuste os breakpoints/responsividade nos componentes `src/components/UFsBarChart.vue` e `src/components/UFsUFList.vue` (ou nas classes Tailwind) para garantir: **lista** em telas pequenas e **gráfico** em telas médias/grandes.
 
----
-
-## Visão geral (como funciona)
 
-1. **ETL** baixa arquivos trimestrais (ZIP), extrai CSVs e gera consolidados em `data/output/`.
-2. Os dados processados são **importados no PostgreSQL** (via script do ETL).
-3. O **backend FastAPI** consulta o banco (SQLAlchemy) e expõe endpoints em `/api/...`.
-4. O **frontend Vue** consome a API (base configurada em `VITE_API_BASE`) e apresenta:
-   - Dashboard com estatísticas e gráfico por UF
-   - Detalhes por operadora (CNPJ) + histórico de despesas (ano/trimestre)
-
----
-
-## Estrutura do repositório
-
-```text
-.
-├─ backend/
-│  ├─ app/
-│  │  ├─ db.py
-│  │  ├─ main.py
-│  │  └─ __init__.py
-│  └─ __init__.py
-├─ etl/
-│  ├─ downloadans.py
-│  ├─ processfiles.py
-│  ├─ agregarezipar.py
-│  ├─ enrichcadop.py
-│  ├─ enrichufmodalidadeporcnpj.py
-│  └─ importpostgres.py
-├─ data/
-│  ├─ raw/            # arquivos .zip baixados
-│  ├─ extracted/      # CSVs extraídos por trimestre
-│  └─ output/         # CSV/ZIP consolidados + consultas (query1.csv, query2.csv, query3.csv, etc.)
-└─ frontend/
-   ├─ src/
-   │  ├─ api.js
-   │  └─ views/
-   │     ├─ Dashboard.vue
-   │     └─ OperadoraDetalhe.vue
-   ├─ tests/
-   ├─ vite.config.js
-   ├─ package.json
-   └─ .env
-
-Requisitos
-Backend / ETL
-Python 3.x
-
-PostgreSQL (recomendado), pois o backend consulta tabelas como:
-
-dim_operadora
-
-fato_despesas_consolidadas
-
-despesas_agregadas
-
-Frontend
-Node.js (recomendado LTS)
-
-npm
-
-Configuração de ambiente
-Backend (PostgreSQL)
-O backend monta a DATABASE_URL a partir das env vars (ver backend/app/db.py):
-
-POSTGRES_HOST (default: localhost)
-
-POSTGRES_PORT (default: 5432)
-
-POSTGRES_DB (default: ans_db)
-
-POSTGRES_USER (default: postgres)
-
-POSTGRES_PASSWORD (obrigatória; o backend lança erro se não existir)
-
-Formato:
-postgresql://POSTGRES_USER:POSTGRES_PASSWORD@POSTGRES_HOST:POSTGRES_PORT/POSTGRES_DB
-
-Exemplo (Windows PowerShell)
-$env:POSTGRES_HOST="localhost"
-$env:POSTGRES_PORT="5432"
-$env:POSTGRES_DB="ans_db"
-$env:POSTGRES_USER="postgres"
-$env:POSTGRES_PASSWORD="SUA_SENHA_AQUI"
-
-Exemplo (Linux/macOS)
-export POSTGRES_HOST="localhost"
-export POSTGRES_PORT="5432"
-export POSTGRES_DB="ans_db"
-export POSTGRES_USER="postgres"
-export POSTGRES_PASSWORD="SUA_SENHA_AQUI"
-
-Frontend (URL do backend)
-O frontend usa import.meta.env.VITE_API_BASE (arquivo frontend/src/api.js).
-
-Crie/edite frontend/.env:
-VITE_API_BASE=http://localhost:8000
-
-Como rodar (local)
-1) ETL (opcional)
-Use se você precisar baixar/processar dados e gerar arquivos em data/output/.
-
-Exemplos:
-python etl/downloadans.py
-python etl/processfiles.py
-
-Saídas típicas em data/output/:
-
-consolidadodespesas.csv / .zip
-
-consolidadodespesasenriquecido.csv / .zip
-
-consolidadodespesasvalidadoenriquecido.csv
-
-despesasagregadas.csv
-
-query1.csv, query2.csv, query3.csv
-
-2) Subir o backend (FastAPI)
-O app é app = FastAPI(...) em backend/app/main.py.
-
-Windows (PowerShell)
-py -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
-
-Linux/macOS
-python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
-
-Health check:
-GET /health → { "status": "ok" }
-
-3) Subir o frontend (Vite + Vue)
-cd frontend
-npm install
-npm run dev
-
-Abra:
-http://localhost:5173
-
-API (endpoints)
-Health
-GET /health
-
-Operadoras (paginação + busca)
-GET /api/operadoras?page=1&limit=20&search=...
-
-Parâmetros:
-
-page (>= 1)
-
-limit (1..100)
-
-search (opcional; busca por CNPJ ou Razão Social)
-
-Resposta (json):
-{
-  "data": [
-    { "cnpj": "…", "razao_social": "…", "uf": "…", "modalidade": "…" }
-  ],
-  "page": 1,
-  "limit": 20,
-  "total": 1234
-}
-
-Detalhes de uma operadora
-GET /api/operadoras/{cnpj}
-
-Observações:
-
-O backend normaliza o CNPJ removendo caracteres não numéricos antes de consultar.
-
-Se não existir: 404 com detail: "Operadora não encontrada".
-
-Histórico de despesas (por ano/trimestre)
-GET /api/operadoras/{cnpj}/despesas
-
-Retorna(json):
-[
-  { "ano": 2025, "trimestre": 1, "valor_despesas": 123.45 },
-  { "ano": 2025, "trimestre": 2, "valor_despesas": 234.56 }
-]
-
-Estatísticas gerais (Dashboard)
-GET /api/estatisticas
-
-Retorna:
-
-total_despesas (float)
-
-media_despesas (float)
-
-top5_operadoras (lista com 5 itens)
-
-Estatísticas por UF
-GET /api/estatisticas/uf
-
-Retorna(json):
-[
-  { "uf": "SP", "total_uf": 123.45 },
-  { "uf": "RJ", "total_uf": 67.89 }
-]
-
-Queries SQL usadas (backend)
-Abaixo estão as queries do backend/app/main.py (executadas via sqlalchemy.text(...)).
-
-1) Listagem paginada de operadoras (com busca)
-
-Contagem total (sql):
-SELECT COUNT(*)
-FROM dim_operadora
-WHERE 1=1
-  AND (cnpj ILIKE :s OR razao_social ILIKE :s);
-
-Página de dados (sql):
-SELECT cnpj, razao_social, uf, modalidade
-FROM dim_operadora
-WHERE 1=1
-  AND (cnpj ILIKE :s OR razao_social ILIKE :s)
-ORDER BY razao_social
-LIMIT :limit OFFSET :offset;
-
-Como funciona
-
-page e limit controlam paginação (offset = (page-1)*limit).
-
-O parâmetro search aplica ILIKE para suportar busca case-insensitive.
-
-2) Detalhe da operadora por CNPJ (sql):
-SELECT cnpj, razao_social, uf, modalidade
-FROM dim_operadora
-WHERE cnpj = :cnpj;
-
-Como funciona
-
-O backend normaliza o CNPJ com regex removendo tudo que não é dígito antes de consultar.
-
-3) Histórico de despesas por operadora ano/trimestre (sql):
-SELECT
-  ano,
-  trimestre,
-  SUM(valor_despesas) AS valor_despesas
-FROM fato_despesas_consolidadas
-WHERE cnpj = :cnpj
-GROUP BY ano, trimestre
-ORDER BY ano, trimestre;
-
-Como funciona
-
-A rota agrega por período (ano/trimestre) para retornar uma série temporal consolidada para o frontend.
-
-4) Estatísticas gerais - total + média (sql):
-
-SELECT
-  COALESCE(SUM(total_despesas), 0) AS total_despesas,
-  COALESCE(AVG(total_despesas), 0) AS media_despesas
-FROM despesas_agregadas;
-
-omo funciona
-
-Usa a tabela despesas_agregadas para calcular SUM e AVG de forma mais barata/consistente.
-
-5) Top 5 operadoras por despesas - soma no fato (sql):
-SELECT
-  d.cnpj,
-  d.razao_social,
-  d.uf,
-  d.modalidade,
-  t.total_despesas
-FROM dim_operadora d
-JOIN (
-    SELECT cnpj, SUM(valor_despesas) AS total_despesas
-    FROM fato_despesas_consolidadas
-    GROUP BY cnpj
-    ORDER BY total_despesas DESC
-    LIMIT 5
-) t ON t.cnpj = d.cnpj
-ORDER BY t.total_despesas DESC;
-
-Como funciona
-
-O subselect calcula o total por CNPJ no fato e retorna só os 5 maiores.
-
-Em seguida faz JOIN com dim_operadora para obter metadados.
-
-6) Distribuição de despesas por UF (sql):
-SELECT
-  d.uf,
-  SUM(f.valor_despesas) AS total_uf
-FROM fato_despesas_consolidadas f
-JOIN dim_operadora d ON d.cnpj = f.cnpj
-WHERE d.uf IS NOT NULL AND d.uf <> ''
-GROUP BY d.uf
-ORDER BY total_uf DESC;
-
-Modelo de dados (tabelas esperadas)
-dim_operadora (dimensão)
-Campos usados pelo backend:
-
-cnpj (chave)
-
-razao_social
-
-uf
-
-modalidade
-
-fato_despesas_consolidadas (fato)
-Campos usados pelo backend:
-
-cnpj (FK para dim_operadora)
-
-ano
-
-trimestre
-
-valor_despesas
-
-despesas_agregadas (agregada)
-Campos usados pelo backend:
-
-total_despesas (usado para SUM e AVG no endpoint /api/estatisticas)
-
-Índices recomendados - performance
-
-Em bases maiores, esses índices ajudam(sql):
--- Busca/joins por CNPJ
-CREATE INDEX IF NOT EXISTS idx_dim_operadora_cnpj
-ON dim_operadora (cnpj);
-
-CREATE INDEX IF NOT EXISTS idx_fato_cnpj_ano_tri
-ON fato_despesas_consolidadas (cnpj, ano, trimestre);
-
--- Agregação por UF (group by/join)
-CREATE INDEX IF NOT EXISTS idx_dim_operadora_uf
-ON dim_operadora (uf);
-
-CORS (desenvolvimento)
-O backend usa CORSMiddleware permitindo origens locais como:
-
-http://localhost:5173 (Vite)
-
-http://localhost:8080
-
-http://localhost:3000
-
-Testes (frontend)
-Os testes ficam em frontend/tests/ e usam Vitest.
-
-Rodar em modo watch (powersheel):
-cd frontend
-npm run test
-
-Rodar uma vez e finalizar (powershell):
-cd frontend
-npm run test:run
-
-Funcionalidades do frontend
-Dashboard
-Total de despesas
-
-Média
-
-Ranking Top 5 operadoras por despesas
-
-Distribuição por UF (gráfico)
-
-Detalhes da operadora
-Exibe dados (razão social, CNPJ, UF, modalidade)
-
-Histórico de despesas com filtro por ano e/ou trimestre
-
-Quando Ano = Todos os anos, as opções de trimestre refletem os trimestres realmente existentes no dataset (inclui T4 se existir)
 
 
 
