@@ -66,11 +66,7 @@ const chartData = computed(() => ({
 
 const chartOptions = computed(() => ({
   responsive: true,
-  maintainAspectRatio: false,
   indexAxis: 'y',
-  layout: {
-    padding: { left: 14, right: 12, top: 8, bottom: 8 },
-  },
   plugins: {
     legend: { display: true },
     title: { display: true, text: 'Total de despesas por UF' },
@@ -81,12 +77,6 @@ const chartOptions = computed(() => ({
     },
   },
   scales: {
-    y: {
-      ticks: {
-        autoSkip: false,
-        padding: 8,
-      },
-    },
     x: {
       title: { display: true, text: 'R$ (mil/mi/bi)' },
       ticks: {
