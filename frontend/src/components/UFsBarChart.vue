@@ -60,12 +60,16 @@ const chartData = computed(() => ({
       backgroundColor: 'rgba(75, 192, 192, 0.35)',
       borderColor: 'rgba(75, 192, 192, 1)',
       borderWidth: 1,
+      borderRadius: 6,
+      barThickness: 14,
+      maxBarThickness: 18,
     },
   ],
 }))
 
 const chartOptions = computed(() => ({
   responsive: true,
+  maintainAspectRatio: false, // importante para respeitar a altura do container [web:2335]
   indexAxis: 'y',
   plugins: {
     legend: { display: true },
@@ -82,13 +86,19 @@ const chartOptions = computed(() => ({
       ticks: {
         callback: (value) => fmtCompactAxis(value),
       },
+      grid: { color: 'rgba(148, 163, 184, 0.25)' },
+    },
+    y: {
+      ticks: { autoSkip: false },
+      grid: { display: false },
     },
   },
 }))
 </script>
 
 <template>
-  <div class="w-full">
+  <!-- dê altura para o Chart.js conseguir calcular corretamente -->
+  <div class="w-full min-h-[380px]">
     <Bar :data="chartData" :options="chartOptions" />
   </div>
 </template>
