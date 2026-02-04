@@ -14,8 +14,8 @@ Projeto full‑stack para integração e visualização de dados públicos (ANS)
 > O projeto inclui testes de frontend (Vitest) cobrindo casos de sucesso, erro e estado vazio.
 
 ## Links (Deploy e repositório)
-- **Repositório:** [URL do repositório]  
-- **Frontend (deploy):** [URL do frontend]  
+- **Repositório:** [[URL do repositório](https://github.com/assuncaolucasss/TesteDeIntegracaoComApiPublica)]  
+- **Frontend (deploy):** teste-de-integracao-com-api-publica-final-q5keugaj0.vercel.app  
 - **Backend (API):** https://testedeintegracaocomapipublica.onrender.com  
 - **Dashboard:** [URL do dashboard]
 
@@ -28,10 +28,10 @@ Projeto full‑stack para integração e visualização de dados públicos (ANS)
 - Testes automatizados do frontend (Vitest) ✅
 
 ## Stack
-- Backend: **Python**, FastAPI, SQLAlchemy, Uvicorn 🔧
-- Frontend: **Vue 3**, Vite, Tailwind CSS (ou CSS do projeto) 🖥️
+- Backend: **Python**, FastAPI, SQLAlchemy, Uvicorn
+- Frontend: **Vue 3**, Vite, Tailwind CSS
 - Banco: **PostgreSQL (Neon)** 🗄️
-- Deploy: Frontend em **Vercel**; Backend em **Render** ⚙️
+- Deploy: Frontend em **Vercel**; Backend em **Render**
 
 ## Rotas da API
 Abaixo estão as rotas principais e exemplos de request (curl). Substitua `[API_BASE]` por `https://testedeintegracaocomapipublica.onrender.com` ou sua URL local.
