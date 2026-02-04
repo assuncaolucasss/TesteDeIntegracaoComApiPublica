@@ -142,20 +142,7 @@ Contribuições via PRs são bem‑vindas; por favor inclua testes quando aplic�
 ## Licença
 MIT
 
-Este repositório é disponibilizado para estudo e aprendizado sob os termos da **MIT License**. Consulte o arquivo `LICENSE` para o texto completo.
-
----
-
-## Checklist TODO ✅
-- [ ] Confirmar URL pública da API para atualizar links diretos no README.
-- [ ] Confirmar o nome do repositório/organização (se quiser que eu coloque o link no cabeçalho).
-- [x] Definir licença do projeto (MIT).
-- [ ] Confirmar comandos de deploy/preview se diferentes de `npm run preview`.
-
----
-
-Se quiser que eu remova seções antigas, adicione badges ou publique este README no repositório com formatação diferente, me avise e aplico as mudanças.
-
+Este repositório é disponibilizado para estudo e aprendizado sob os termos da **MIT License**.
 
 
 
