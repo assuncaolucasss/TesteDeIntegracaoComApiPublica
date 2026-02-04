@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiGet } from '../api'
 import DespesasBarChart from '../components/DespesasBarChart.vue'
+import DespesasList from '../components/DespesasList.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -41,22 +42,17 @@ const availableYears = computed(() => {
 const yearFilter = ref(0)
 const triFilter = ref(0)
 
-// Trimestres existentes conforme dados disponíveis:
-// - Se ano específico: trimestres que existem naquele ano
-// - Se "Todos os anos": trimestres que existem no dataset inteiro
+// Trimestres existentes conforme dados disponíveis
 const trimestresForYear = computed(() => {
   const base = yearFilter.value
     ? despesasSorted.value.filter(d => Number(d?.ano ?? 0) === Number(yearFilter.value))
     : despesasSorted.value
 
-  const tris = new Set(
-    base.map(d => Number(d?.trimestre ?? 0)).filter(Boolean)
-  )
-
+  const tris = new Set(base.map(d => Number(d?.trimestre ?? 0)).filter(Boolean))
   return [...tris].sort((a, b) => a - b)
 })
 
-// Se trimestre selecionado não existir para o ano atual, reseta para "Todos os trimestres"
+// Se trimestre selecionado não existir para o ano atual, reseta
 watch([yearFilter, trimestresForYear], () => {
   if (triFilter.value && !trimestresForYear.value.includes(Number(triFilter.value))) {
     triFilter.value = 0
@@ -204,7 +200,7 @@ watch(() => route.params.cnpj, () => load())
         </div>
       </div>
 
-      <!-- Card: filtros + gráfico + lista/tabela -->
+      <!-- Card: filtros + visualização -->
       <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -259,67 +255,45 @@ watch(() => route.params.cnpj, () => load())
           Sem dados para o filtro selecionado.
         </div>
 
-        <div v-else class="mt-4 grid gap-4 lg:grid-cols-5">
-          <div class="lg:col-span-3">
-            <div class="rounded-lg border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-950">
-              <DespesasBarChart :despesas="despesasFiltered" />
-            </div>
+        <template v-else>
+          <!-- MOBILE: Lista (não renderiza Chart.js) -->
+          <div class="mt-4 sm:hidden">
+            <DespesasList :rows="despesasFiltered" />
           </div>
 
-          <div class="lg:col-span-2">
-            <!-- MOBILE: Cards -->
-            <div class="space-y-3 sm:hidden">
-              <article
-                v-for="d in despesasFiltered"
-                :key="`${d.ano}-${d.trimestre}`"
-                class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      Período
-                    </div>
-                    <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {{ d.ano }} • T{{ d.trimestre }}
-                    </div>
-                  </div>
-
-                  <div class="text-right">
-                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      Valor
-                    </div>
-                    <div class="mt-1 whitespace-nowrap text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {{ fmtMoney(d.valor_despesas) }}
-                    </div>
-                  </div>
-                </div>
-              </article>
+          <!-- TABLET/DESKTOP: Gráfico + tabela -->
+          <div class="mt-4 hidden sm:grid sm:gap-4 lg:grid-cols-5">
+            <div class="lg:col-span-3">
+              <div class="rounded-lg border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-950">
+                <DespesasBarChart :despesas="despesasFiltered" />
+              </div>
             </div>
 
-            <!-- TABLET/DESKTOP: Tabela -->
-            <div class="hidden overflow-x-auto rounded-lg border border-slate-200 dark:border-white/10 sm:block">
-              <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
-                <thead class="bg-slate-50 dark:bg-slate-950">
-                  <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Ano</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Trimestre</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Valor</th>
-                  </tr>
-                </thead>
+            <div class="lg:col-span-2">
+              <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-white/10">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
+                  <thead class="bg-slate-50 dark:bg-slate-950">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Ano</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Trimestre</th>
+                      <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Valor</th>
+                    </tr>
+                  </thead>
 
-                <tbody class="divide-y divide-slate-200 bg-white dark:divide-white/10 dark:bg-slate-900">
-                  <tr v-for="d in despesasFiltered" :key="`${d.ano}-${d.trimestre}`" class="hover:bg-slate-50 dark:hover:bg-white/5">
-                    <td class="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">{{ d.ano }}</td>
-                    <td class="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">T{{ d.trimestre }}</td>
-                    <td class="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {{ fmtMoney(d.valor_despesas) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                  <tbody class="divide-y divide-slate-200 bg-white dark:divide-white/10 dark:bg-slate-900">
+                    <tr v-for="d in despesasFiltered" :key="`${d.ano}-${d.trimestre}`" class="hover:bg-slate-50 dark:hover:bg-white/5">
+                      <td class="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">{{ d.ano }}</td>
+                      <td class="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">T{{ d.trimestre }}</td>
+                      <td class="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {{ fmtMoney(d.valor_despesas) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
+        </template>
       </div>
     </template>
   </section>
