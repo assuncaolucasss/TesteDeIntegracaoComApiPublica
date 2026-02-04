@@ -10,26 +10,26 @@ function go(path) {
   router.push(path)
 }
 
-const loading = ref(false)
-const error = ref('')
+const statsState = ref('loading') // 'loading' | 'ok' | 'unavailable'
 const stats = ref(null)
 
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }) // [web:2896]
+
+const hasStats = computed(() => statsState.value === 'ok' && !!stats.value)
 
 const totalDespesas = computed(() => Number(stats.value?.total_despesas ?? 0))
 const mediaDespesas = computed(() => Number(stats.value?.media_despesas ?? 0))
 const top1 = computed(() => stats.value?.top5_operadoras?.[0] ?? null)
 
 async function loadStats() {
-  loading.value = true
-  error.value = ''
+  statsState.value = 'loading'
   try {
-    stats.value = await apiGet('/api/estatisticas')
-  } catch (e) {
-    error.value = e?.message ?? 'Falha ao carregar estatísticas.'
+    const res = await apiGet('/api/estatisticas')
+    stats.value = res ?? null
+    statsState.value = stats.value ? 'ok' : 'unavailable'
+  } catch {
     stats.value = null
-  } finally {
-    loading.value = false
+    statsState.value = 'unavailable'
   }
 }
 
@@ -47,42 +47,68 @@ onMounted(loadStats) // [web:2889]
 
     <!-- Mini-métricas -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <!-- Total -->
       <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
-        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          Total de despesas
+        <div class="flex items-start justify-between gap-3">
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Total de despesas
+          </div>
+
+          <button
+            v-if="statsState === 'unavailable'"
+            type="button"
+            @click="loadStats"
+            class="inline-flex h-8 items-center justify-center rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50
+                   focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400
+                   dark:border-white/10 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Tentar novamente
+          </button>
         </div>
+
         <div class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
-          <span v-if="loading">Carregando…</span>
-          <span v-else>{{ brl.format(totalDespesas) }}</span>
+          <span v-if="statsState === 'loading'">Carregando…</span>
+          <span v-else-if="hasStats">{{ brl.format(totalDespesas) }}</span>
+          <span v-else>—</span>
         </div>
-        <p v-if="error" class="mt-1 text-xs text-red-600 dark:text-red-300">
-          {{ error }}
+
+        <p v-if="statsState === 'unavailable'" class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          Indicadores indisponíveis (backend offline).
         </p>
       </article>
 
+      <!-- Média -->
       <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Média por operadora
         </div>
+
         <div class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
-          <span v-if="loading">Carregando…</span>
-          <span v-else>{{ brl.format(mediaDespesas) }}</span>
+          <span v-if="statsState === 'loading'">Carregando…</span>
+          <span v-else-if="hasStats">{{ brl.format(mediaDespesas) }}</span>
+          <span v-else>—</span>
         </div>
+
         <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Baseado nos dados consolidados.
         </p>
       </article>
 
+      <!-- Top operadora -->
       <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Top operadora
         </div>
+
         <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-          <span v-if="loading">Carregando…</span>
-          <span v-else>{{ top1?.razao_social ?? '—' }}</span>
+          <span v-if="statsState === 'loading'">Carregando…</span>
+          <span v-else-if="hasStats">{{ top1?.razao_social ?? '—' }}</span>
+          <span v-else>—</span>
         </div>
+
         <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          <span v-if="!loading && top1">CNPJ: {{ top1.cnpj }} • UF: {{ top1.uf }}</span>
+          <span v-if="hasStats && top1">CNPJ: {{ top1.cnpj }} • UF: {{ top1.uf }}</span>
+          <span v-else-if="statsState === 'unavailable'">Indicadores indisponíveis (backend offline).</span>
         </div>
       </article>
     </div>
