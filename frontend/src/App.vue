@@ -25,6 +25,14 @@ function onToggleTheme() {
 const isDark = computed(() => theme.value === 'dark')
 const themeAria = computed(() => (isDark.value ? 'Mudar para tema claro' : 'Mudar para tema escuro'))
 const tooltipText = computed(() => (isDark.value ? 'Tema escuro (clique para claro)' : 'Tema claro (clique para escuro)'))
+
+const linkBase =
+  'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium ' +
+  'text-slate-700 hover:bg-slate-100 ' +
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 ' +
+  'dark:text-slate-200 dark:hover:bg-white/10'
+
+const linkActive = 'bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white'
 </script>
 
 <template>
@@ -114,20 +122,45 @@ const tooltipText = computed(() => (isDark.value ? 'Tema escuro (clique para cla
         <!-- Nav + Toggle (desktop) -->
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <nav class="flex flex-wrap items-center justify-center gap-1">
+            <!-- HOME -->
             <RouterLink
               to="/"
-              class="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:text-slate-200 dark:hover:bg-white/10"
-              active-class="bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white"
-              exact-active-class="bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white"
+              :class="linkBase"
+              :active-class="linkActive"
+              :exact-active-class="linkActive"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                <path d="M3 10.5L12 3l9 7.5"></path>
+                <path d="M5 10v10h14V10"></path>
+              </svg>
+              Home
+            </RouterLink>
+
+            <!-- OPERADORAS -->
+            <RouterLink
+              to="/operadoras"
+              :class="linkBase"
+              :active-class="linkActive"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="M21 21l-4.3-4.3"></path>
+              </svg>
               Operadoras
             </RouterLink>
 
+            <!-- DASHBOARD -->
             <RouterLink
               to="/dashboard"
-              class="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 dark:text-slate-200 dark:hover:bg-white/10"
-              active-class="bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white"
+              :class="linkBase"
+              :active-class="linkActive"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                <path d="M3 3v18h18"></path>
+                <path d="M7 14v4"></path>
+                <path d="M12 10v8"></path>
+                <path d="M17 6v12"></path>
+              </svg>
               Dashboard
             </RouterLink>
           </nav>
