@@ -45,7 +45,7 @@ onMounted(loadStats) // [web:2889]
       </p>
     </header>
 
-    <!-- Mini-métricas -->
+    <!-- Mini-métricas + skeleton -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <!-- Total -->
       <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
@@ -66,15 +66,22 @@ onMounted(loadStats) // [web:2889]
           </button>
         </div>
 
-        <div class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
-          <span v-if="statsState === 'loading'">Carregando…</span>
-          <span v-else-if="hasStats">{{ brl.format(totalDespesas) }}</span>
-          <span v-else>—</span>
+        <!-- skeleton -->
+        <div v-if="statsState === 'loading'" class="mt-2 space-y-2" aria-hidden="true">
+          <div class="h-7 w-40 rounded-md bg-slate-200/80 animate-pulse dark:bg-white/10"></div>
+          <div class="h-3 w-24 rounded-md bg-slate-200/70 animate-pulse dark:bg-white/10"></div>
         </div>
 
-        <p v-if="statsState === 'unavailable'" class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          Indicadores indisponíveis (backend offline).
-        </p>
+        <template v-else>
+          <div class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
+            <span v-if="hasStats">{{ brl.format(totalDespesas) }}</span>
+            <span v-else>—</span>
+          </div>
+
+          <p v-if="statsState === 'unavailable'" class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Indicadores indisponíveis (backend offline).
+          </p>
+        </template>
       </article>
 
       <!-- Média -->
@@ -83,15 +90,26 @@ onMounted(loadStats) // [web:2889]
           Média por operadora
         </div>
 
-        <div class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
-          <span v-if="statsState === 'loading'">Carregando…</span>
-          <span v-else-if="hasStats">{{ brl.format(mediaDespesas) }}</span>
-          <span v-else>—</span>
+        <!-- skeleton -->
+        <div v-if="statsState === 'loading'" class="mt-2 space-y-2" aria-hidden="true">
+          <div class="h-7 w-36 rounded-md bg-slate-200/80 animate-pulse dark:bg-white/10"></div>
+          <div class="h-3 w-48 rounded-md bg-slate-200/70 animate-pulse dark:bg-white/10"></div>
         </div>
 
-        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          Baseado nos dados consolidados.
-        </p>
+        <template v-else>
+          <div class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
+            <span v-if="hasStats">{{ brl.format(mediaDespesas) }}</span>
+            <span v-else>—</span>
+          </div>
+
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Baseado nos dados consolidados.
+          </p>
+
+          <p v-if="statsState === 'unavailable'" class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Indicadores indisponíveis (backend offline).
+          </p>
+        </template>
       </article>
 
       <!-- Top operadora -->
@@ -100,16 +118,23 @@ onMounted(loadStats) // [web:2889]
           Top operadora
         </div>
 
-        <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-          <span v-if="statsState === 'loading'">Carregando…</span>
-          <span v-else-if="hasStats">{{ top1?.razao_social ?? '—' }}</span>
-          <span v-else>—</span>
+        <!-- skeleton -->
+        <div v-if="statsState === 'loading'" class="mt-2 space-y-2" aria-hidden="true">
+          <div class="h-4 w-56 rounded-md bg-slate-200/80 animate-pulse dark:bg-white/10"></div>
+          <div class="h-3 w-40 rounded-md bg-slate-200/70 animate-pulse dark:bg-white/10"></div>
         </div>
 
-        <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          <span v-if="hasStats && top1">CNPJ: {{ top1.cnpj }} • UF: {{ top1.uf }}</span>
-          <span v-else-if="statsState === 'unavailable'">Indicadores indisponíveis (backend offline).</span>
-        </div>
+        <template v-else>
+          <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <span v-if="hasStats">{{ top1?.razao_social ?? '—' }}</span>
+            <span v-else>—</span>
+          </div>
+
+          <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <span v-if="hasStats && top1">CNPJ: {{ top1.cnpj }} • UF: {{ top1.uf }}</span>
+            <span v-else-if="statsState === 'unavailable'">Indicadores indisponíveis (backend offline).</span>
+          </div>
+        </template>
       </article>
     </div>
 
@@ -126,7 +151,6 @@ onMounted(loadStats) // [web:2889]
                    dark:bg-white dark:text-slate-900"
             aria-hidden="true"
           >
-            <!-- ícone lupa -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-6 w-6">
               <circle cx="11" cy="11" r="7"></circle>
               <path d="M21 21l-4.3-4.3"></path>
@@ -165,7 +189,6 @@ onMounted(loadStats) // [web:2889]
                    dark:border-white/10 dark:bg-slate-950 dark:text-slate-100"
             aria-hidden="true"
           >
-            <!-- ícone gráfico -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-6 w-6">
               <path d="M3 3v18h18"></path>
               <path d="M7 14v4"></path>
