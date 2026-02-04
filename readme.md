@@ -129,16 +129,6 @@ Uma aplicação full‑stack para integrar, processar e visualizar dados públic
 
 ---
 
-## Contribuição & Commits 🧩
-Seguimos **Conventional Commits**. Exemplos:
-- `feat(frontend): adicionar skeleton nas métricas da Home`
-- `fix(operadoras): corrigir paginação com page e limit`
-- `docs: atualizar README com endpoints e instruções de uso`
-
-Contribuições via PRs são bem‑vindas; por favor inclua testes quando aplicável.
-
----
-
 ## Licença
 MIT
 
