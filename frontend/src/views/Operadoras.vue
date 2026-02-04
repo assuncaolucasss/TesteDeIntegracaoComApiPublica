@@ -1,10 +1,11 @@
 <!-- Operadoras.vue -->
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { apiGet } from '../api'
 
 const router = useRouter()
+const route = useRoute()
 
 const operadoras = ref([])
 const loading = ref(false)
@@ -25,8 +26,36 @@ function go(p) {
 }
 
 /**
- * watch com múltiplas fontes (Vue 3) [web:2904]
+ * URL -> state (carrega filtros ao abrir/compartilhar link)
  */
+function hydrateFromQuery() {
+  const qp = route.query
+
+  const qSearch = typeof qp.search === 'string' ? qp.search : ''
+  q.value = qSearch
+
+  const qPage = Number(qp.page ?? 1)
+  page.value = Number.isFinite(qPage) && qPage > 0 ? qPage : 1
+
+  const qLimit = Number(qp.limit ?? 10)
+  pageSize.value = [5, 10, 20, 50].includes(qLimit) ? qLimit : 10
+}
+
+/**
+ * state -> URL (salva filtros na URL sem poluir o histórico)
+ * Vue Router suporta router.replace para trocar a URL sem novo history entry. [web:2902]
+ */
+function syncQuery() {
+  const query = {
+    ...route.query,
+    search: q.value.trim() || undefined,
+    page: page.value > 1 ? String(page.value) : undefined,
+    limit: pageSize.value !== 10 ? String(pageSize.value) : undefined
+  }
+
+  router.replace({ query })
+}
+
 let t = null
 function debouncedLoad() {
   clearTimeout(t)
@@ -35,10 +64,12 @@ function debouncedLoad() {
 
 watch([q, pageSize], () => {
   go(1)
+  syncQuery()
   debouncedLoad()
 })
 
 watch(page, () => {
+  syncQuery()
   load()
 })
 
@@ -71,7 +102,10 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  hydrateFromQuery()
+  load()
+})
 </script>
 
 <template>
@@ -235,7 +269,6 @@ onMounted(load)
           </router-link>
         </article>
 
-        <!-- Empty state melhor -->
         <div
           v-if="operadoras.length === 0"
           class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-200"
@@ -321,7 +354,6 @@ onMounted(load)
                 </td>
               </tr>
 
-              <!-- Empty state melhor (desktop) -->
               <tr v-if="operadoras.length === 0">
                 <td colspan="5" class="px-4 py-8 text-center">
                   <div class="mx-auto max-w-xl">
