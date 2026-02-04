@@ -15,19 +15,31 @@ const total = ref(0)
 const serverPage = ref(1)
 const serverLimit = ref(10)
 
-const pageCount = computed(() => Math.max(1, Math.ceil((total.value || 0) / pageSize.value)))
+const pageCount = computed(() =>
+  Math.max(1, Math.ceil((total.value || 0) / pageSize.value))
+)
 
 function go(p) {
   page.value = Math.min(pageCount.value, Math.max(1, p))
 }
 
+/**
+ * Debounce simples para busca:
+ * - evita request a cada tecla
+ */
+let t = null
+function debouncedLoad() {
+  clearTimeout(t)
+  t = setTimeout(() => load(), 300)
+}
+
 // sempre que muda busca ou tamanho da página, volta pra primeira
 watch([q, pageSize], () => {
   go(1)
-  load()
+  debouncedLoad()
 })
 
-// quando muda a página, recarrega
+// quando muda a página, recarrega (sem debounce)
 watch(page, () => {
   load()
 })
@@ -36,8 +48,11 @@ function buildQuery() {
   const params = new URLSearchParams()
   params.set('page', String(page.value))
   params.set('limit', String(pageSize.value))
+
   const term = q.value.trim()
-  if (term) params.set('q', term)
+  // IMPORTANTE: o backend espera "search", não "q"
+  if (term) params.set('search', term)
+
   return params.toString()
 }
 
