@@ -1,6 +1,10 @@
+<!-- Operadoras.vue -->
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { apiGet } from '../api'
+
+const router = useRouter()
 
 const operadoras = ref([])
 const loading = ref(false)
@@ -10,22 +14,18 @@ const q = ref('')
 const page = ref(1)
 const pageSize = ref(10)
 
-// Metadados vindos do backend
 const total = ref(0)
 const serverPage = ref(1)
 const serverLimit = ref(10)
 
-const pageCount = computed(() =>
-  Math.max(1, Math.ceil((total.value || 0) / pageSize.value))
-)
+const pageCount = computed(() => Math.max(1, Math.ceil((total.value || 0) / pageSize.value)))
 
 function go(p) {
   page.value = Math.min(pageCount.value, Math.max(1, p))
 }
 
 /**
- * Debounce simples para busca:
- * - evita request a cada tecla
+ * watch com múltiplas fontes (Vue 3) [web:2904]
  */
 let t = null
 function debouncedLoad() {
@@ -33,13 +33,11 @@ function debouncedLoad() {
   t = setTimeout(() => load(), 300)
 }
 
-// sempre que muda busca ou tamanho da página, volta pra primeira
 watch([q, pageSize], () => {
   go(1)
   debouncedLoad()
 })
 
-// quando muda a página, recarrega (sem debounce)
 watch(page, () => {
   load()
 })
@@ -50,7 +48,6 @@ function buildQuery() {
   params.set('limit', String(pageSize.value))
 
   const term = q.value.trim()
-  // IMPORTANTE: o backend espera "search", não "q"
   if (term) params.set('search', term)
 
   return params.toString()
@@ -59,11 +56,8 @@ function buildQuery() {
 async function load() {
   loading.value = true
   error.value = ''
-
   try {
     const res = await apiGet(`/api/operadoras?${buildQuery()}`)
-
-    // Esperado: { data: [...], page, limit, total }
     operadoras.value = Array.isArray(res?.data) ? res.data : []
     total.value = Number(res?.total ?? operadoras.value.length) || 0
     serverPage.value = Number(res?.page ?? page.value) || page.value
@@ -195,7 +189,7 @@ onMounted(load)
     </div>
 
     <template v-else>
-      <!-- MOBILE: Cards (sm <) -->
+      <!-- MOBILE: Cards -->
       <div class="space-y-3 sm:hidden">
         <article
           v-for="o in operadoras"
@@ -241,15 +235,41 @@ onMounted(load)
           </router-link>
         </article>
 
+        <!-- Empty state melhor -->
         <div
           v-if="operadoras.length === 0"
           class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-200"
         >
-          Nenhum resultado para o filtro atual.
+          <div class="font-semibold">Nenhum resultado</div>
+          <div class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Não encontramos resultados para <span class="font-medium">{{ q.trim() || 'sua busca' }}</span>.
+          </div>
+
+          <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              @click="q = ''"
+              class="inline-flex h-11 w-full items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white hover:bg-slate-800
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400
+                     dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+            >
+              Limpar busca
+            </button>
+
+            <button
+              type="button"
+              @click="router.push('/dashboard')"
+              class="inline-flex h-11 w-full items-center justify-center rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50
+                     focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400
+                     dark:border-white/10 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              Ver Dashboard
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- DESKTOP/TABLET: Tabela (sm+) -->
+      <!-- DESKTOP/TABLET: Tabela -->
       <div class="hidden sm:block rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-slate-900">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-slate-200 dark:divide-white/10">
@@ -301,9 +321,35 @@ onMounted(load)
                 </td>
               </tr>
 
+              <!-- Empty state melhor (desktop) -->
               <tr v-if="operadoras.length === 0">
-                <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-600 dark:text-slate-400">
-                  Nenhum resultado para o filtro atual.
+                <td colspan="5" class="px-4 py-8 text-center">
+                  <div class="mx-auto max-w-xl">
+                    <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">Nenhum resultado</div>
+                    <div class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                      Não encontramos resultados para <span class="font-medium">{{ q.trim() || 'sua busca' }}</span>.
+                    </div>
+                    <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                      <button
+                        type="button"
+                        @click="q = ''"
+                        class="inline-flex h-11 items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white hover:bg-slate-800
+                               focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400
+                               dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                      >
+                        Limpar busca
+                      </button>
+                      <button
+                        type="button"
+                        @click="router.push('/dashboard')"
+                        class="inline-flex h-11 items-center justify-center rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50
+                               focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400
+                               dark:border-white/10 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+                      >
+                        Ver Dashboard
+                      </button>
+                    </div>
+                  </div>
                 </td>
               </tr>
             </tbody>

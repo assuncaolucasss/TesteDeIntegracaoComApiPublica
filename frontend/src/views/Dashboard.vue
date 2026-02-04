@@ -1,3 +1,4 @@
+<!-- Dashboard.vue-->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { apiGet } from '../api'
@@ -12,7 +13,7 @@ const porUF = ref([])
 
 const topNUF = ref(10)
 
-const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }) // [web:2896]
 const top5 = computed(() => stats.value?.top5_operadoras ?? [])
 
 async function load() {
@@ -264,12 +265,10 @@ onMounted(load)
         </div>
 
         <template v-else>
-          <!-- MOBILE: Lista -->
           <div class="mt-4 sm:hidden">
             <UFsUFList :rows="porUF" :topN="topNUF" />
           </div>
 
-          <!-- DESKTOP/TABLET: Gráfico -->
           <div class="mt-4 hidden rounded-lg border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-950 sm:block">
             <div class="min-h-[380px]">
               <UFsBarChart :rows="porUF" :topN="topNUF" />

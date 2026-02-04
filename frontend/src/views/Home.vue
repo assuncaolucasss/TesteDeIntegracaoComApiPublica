@@ -1,10 +1,39 @@
+<!-- Home.vue -->
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiGet } from '../api'
+
 const router = useRouter()
 
 function go(path) {
   router.push(path)
 }
+
+const loading = ref(false)
+const error = ref('')
+const stats = ref(null)
+
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }) // [web:2896]
+
+const totalDespesas = computed(() => Number(stats.value?.total_despesas ?? 0))
+const mediaDespesas = computed(() => Number(stats.value?.media_despesas ?? 0))
+const top1 = computed(() => stats.value?.top5_operadoras?.[0] ?? null)
+
+async function loadStats() {
+  loading.value = true
+  error.value = ''
+  try {
+    stats.value = await apiGet('/api/estatisticas')
+  } catch (e) {
+    error.value = e?.message ?? 'Falha ao carregar estatísticas.'
+    stats.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadStats) // [web:2889]
 </script>
 
 <template>
@@ -16,6 +45,49 @@ function go(path) {
       </p>
     </header>
 
+    <!-- Mini-métricas -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          Total de despesas
+        </div>
+        <div class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
+          <span v-if="loading">Carregando…</span>
+          <span v-else>{{ brl.format(totalDespesas) }}</span>
+        </div>
+        <p v-if="error" class="mt-1 text-xs text-red-600 dark:text-red-300">
+          {{ error }}
+        </p>
+      </article>
+
+      <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          Média por operadora
+        </div>
+        <div class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
+          <span v-if="loading">Carregando…</span>
+          <span v-else>{{ brl.format(mediaDespesas) }}</span>
+        </div>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          Baseado nos dados consolidados.
+        </p>
+      </article>
+
+      <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-slate-900">
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          Top operadora
+        </div>
+        <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <span v-if="loading">Carregando…</span>
+          <span v-else>{{ top1?.razao_social ?? '—' }}</span>
+        </div>
+        <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <span v-if="!loading && top1">CNPJ: {{ top1.cnpj }} • UF: {{ top1.uf }}</span>
+        </div>
+      </article>
+    </div>
+
+    <!-- Cards principais -->
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <!-- Card Operadoras -->
       <article
@@ -96,6 +168,29 @@ function go(path) {
           </button>
         </div>
       </article>
+    </div>
+
+    <!-- Ações rápidas -->
+    <div class="flex flex-col gap-2 sm:flex-row">
+      <button
+        type="button"
+        @click="go('/operadoras')"
+        class="inline-flex h-11 w-full items-center justify-center rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50
+               focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400
+               dark:border-white/10 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
+      >
+        Buscar operadora
+      </button>
+
+      <button
+        type="button"
+        @click="go('/dashboard')"
+        class="inline-flex h-11 w-full items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white hover:bg-slate-800
+               focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400
+               dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+      >
+        Ver insights do Dashboard
+      </button>
     </div>
   </section>
 </template>
